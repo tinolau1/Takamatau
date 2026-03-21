@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Japan Drive 2026 | V19 ProMax</title>
+    <title>Japan Drive 2026 | V20 ProThin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
@@ -15,224 +15,164 @@
         .serif { font-family: 'Noto Serif JP', serif; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* 景點間距與 ProMotion 適配 */
+        /* 景點間距 */
         .timeline-line { position: absolute; left: 50px; top: 0; bottom: 0; width: 1px; background: #E5E1D8; z-index: 0; }
-        .event-card { 
-            position: relative; z-index: 10; padding-left: 65px; 
-            margin-bottom: 75px; 
-            transition: all 0.4s cubic-bezier(0.1, 0.9, 0.2, 1);
-            opacity: 0.15; transform: scale(0.94);
-        }
+        .event-card { position: relative; z-index: 10; padding-left: 65px; margin-bottom: 75px; transition: all 0.4s cubic-bezier(0.1, 0.9, 0.2, 1); opacity: 0.15; transform: scale(0.96); }
         .event-card.is-active { opacity: 1; transform: scale(1); }
         .event-time { position: absolute; left: 0; width: 45px; text-align: right; font-size: 15px; font-weight: 900; color: #ccc; transition: 0.3s; }
         .is-active .event-time { color: var(--accent-red); font-size: 20px; }
 
         /* 懸浮狀態列 */
         .floating-status { 
-            position: fixed; bottom: calc(95px + env(safe-area-inset-bottom)); left: 16px; right: 16px; 
+            position: fixed; bottom: calc(90px + env(safe-area-inset-bottom)); left: 16px; right: 16px; 
             background: rgba(255,255,255,0.98); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
-            border-radius: 24px; box-shadow: 0 15px 45px rgba(0,0,0,0.12); 
-            display: flex; align-items: center; padding: 18px 22px; z-index: 1000; 
-            border: 0.5px solid rgba(0,0,0,0.05);
-            transition: transform 0.2s;
+            border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); 
+            display: flex; align-items: center; padding: 16px 20px; z-index: 1000; border: 0.5px solid rgba(0,0,0,0.05);
         }
 
-        /* V19 全頁面下拉手勢感應區 */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(6px); z-index: 1999; }
+        /* 彈窗下拉手勢 */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); z-index: 1999; }
         .modal-container { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 2000;
-            background: white; border-top-left-radius: 45px; border-top-right-radius: 45px;
+            background: white; border-top-left-radius: 40px; border-top-right-radius: 40px;
             max-height: 94vh; overflow: hidden; display: flex; flex-direction: column;
             will-change: transform; transition: transform 0.4s cubic-bezier(0.15, 0.85, 0.35, 1);
-            touch-action: pan-y; /* 允許垂直平滑捲動 */
         }
         .modal-scroll-area { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
         .dragging { transition: none !important; }
 
-        .tab-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 0.5px solid #eee; display: flex; justify-content: space-around; padding: 14px 0 calc(18px + env(safe-area-inset-bottom)); z-index: 1001; }
-        .tag-must { background: var(--accent-red); color: white; padding: 2px 6px; border-radius: 6px; font-size: 9px; font-weight: 900; letter-spacing: 1px; }
+        /* 導航 */
+        .tab-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 0.5px solid #eee; display: flex; justify-content: space-around; padding: 14px 0 calc(12px + env(safe-area-inset-bottom)); z-index: 1001; }
+        
+        /* 緊湊記帳頁樣式 */
+        .budget-header { background: #2D2424; color: white; padding: 30px 24px; border-radius: 0 0 32px 32px; margin-bottom: 24px; }
+        .compact-input { background: white; border: 1px solid #E5E1D8; border-radius: 12px; display: flex; overflow: hidden; }
+        .compact-input input { border: none; padding: 12px; font-size: 12px; font-weight: 600; outline: none; }
+        .expense-item { border-bottom: 0.5px solid #E5E1D8; padding: 14px 0; display: flex; justify-content: space-between; align-items: center; }
+        .tag-must { background: var(--accent-red); color: white; padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 900; }
     </style>
 </head>
 <body x-data="travelApp()" x-init="initApp()" @scroll.window.throttle.2ms="syncStatus()">
 
     <!-- TAB 1: 行程主頁 -->
     <div x-show="activeTab === 'itinerary'" x-cloak>
-        <header class="pt-16 px-8 text-center sticky top-0 bg-[#F9F7F2]/95 backdrop-blur-md z-[50]">
-            <h1 class="serif text-2xl font-black mb-5 tracking-tighter">JAPAN DRIVE 2026</h1>
+        <header class="pt-14 px-8 text-center sticky top-0 bg-[#F9F7F2]/95 backdrop-blur-md z-[50]">
+            <h1 class="serif text-xl font-black mb-4 tracking-tighter">JAPAN DRIVE 2026</h1>
             <div class="flex overflow-x-auto space-x-3 py-2 no-scrollbar">
                 <template x-for="(day, index) in itinerary" :key="index">
-                    <div @click="changeDay(index)" class="min-w-[55px] h-[55px] rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all" :class="currentDay === index ? 'bg-white shadow-md font-bold border border-gray-50' : 'opacity-20'">
-                        <span class="text-[9px] uppercase font-black" x-text="day.week"></span>
-                        <span class="text-xl serif font-black" x-text="day.dateNum"></span>
+                    <div @click="changeDay(index)" class="min-w-[48px] h-[48px] rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all" :class="currentDay === index ? 'bg-white shadow-sm font-bold border border-gray-100' : 'opacity-20'">
+                        <span class="text-[8px] uppercase font-black" x-text="day.week"></span>
+                        <span class="text-base serif font-black" x-text="day.dateNum"></span>
                     </div>
                 </template>
             </div>
         </header>
 
-        <!-- 當天天氣 -->
-        <div class="mx-8 my-6 px-6 py-4 bg-white/70 rounded-[28px] flex justify-between items-center border border-white shadow-sm">
-            <div class="flex items-center">
-                <i class="fas fa-location-dot mr-3 text-[#8E2D4F] text-xs animate-pulse"></i>
-                <span class="text-[11px] font-black uppercase tracking-widest" x-text="itinerary[currentDay].city"></span>
-            </div>
-            <div class="flex items-center text-orange-600 font-black">
-                <span class="text-xs mr-3" x-text="itinerary[currentDay].weatherLabel"></span>
-                <span class="serif text-base" x-text="itinerary[currentDay].temp"></span>
-            </div>
+        <div class="mx-8 my-5 px-5 py-3 bg-white/60 rounded-2xl flex justify-between items-center border border-white">
+            <div class="flex items-center"><i class="fas fa-location-arrow mr-3 text-[#8E2D4F] text-[10px]"></i><span class="text-[10px] font-black uppercase" x-text="itinerary[currentDay].city"></span></div>
+            <div class="flex items-center text-orange-600 font-black"><span class="text-xs mr-3" x-text="itinerary[currentDay].weatherLabel"></span><span class="serif text-sm" x-text="itinerary[currentDay].temp"></span></div>
         </div>
 
         <main class="relative px-8 pt-6 pb-96">
             <div class="timeline-line"></div>
             <template x-for="(event, eIdx) in itinerary[currentDay].events" :key="eIdx">
-                <div :id="'event-'+eIdx" 
-                     class="event-card js-event-item" 
-                     :class="activeEventIndex === eIdx ? 'is-active' : ''"
-                     @click="openEvent(event)">
-                    <div class="event-time serif font-black">
-                        <span x-text="event.time"></span><span class="text-[10px] align-top">°</span>
-                    </div>
-                    <div class="flex items-center space-x-2 mb-2">
-                        <span class="text-[8px] font-black opacity-30 uppercase tracking-[2px]" x-text="event.type"></span>
-                        <template x-if="event.booked"><span class="bg-blue-600 text-white text-[7px] px-1.5 rounded-sm font-black">RESERVED</span></template>
-                    </div>
-                    <h4 class="serif text-lg leading-tight mb-2 font-black text-[#2D2424]" x-text="event.title"></h4>
-                    <p class="text-[11px] opacity-60 leading-relaxed line-clamp-2" x-html="event.desc"></p>
-                    <template x-if="event.must">
-                        <div class="mt-3 flex items-center"><span class="tag-must mr-3">必吃</span><span class="text-[11px] font-black text-[#8E2D4F]" x-text="event.must"></span></div>
-                    </template>
+                <div :id="'event-'+eIdx" class="event-card js-event-item" :class="activeEventIndex === eIdx ? 'is-active' : ''" @click="openEvent(event)">
+                    <div class="event-time serif font-black"><span x-text="event.time"></span>°</div>
+                    <div class="flex items-center space-x-2 mb-1.5"><span class="text-[8px] font-black opacity-30 uppercase tracking-widest" x-text="event.type"></span></div>
+                    <h4 class="serif text-base leading-tight mb-1.5 font-black text-[#2D2424]" x-text="event.title"></h4>
+                    <p class="text-[10px] opacity-60 line-clamp-2" x-html="event.desc"></p>
+                    <template x-if="event.must"><div class="mt-2 flex items-center"><span class="tag-must mr-2">必吃</span><span class="text-[10px] font-black text-[#8E2D4F]" x-text="event.must"></span></div></template>
                 </div>
             </template>
         </main>
 
-        <!-- 懸浮同步狀態欄 -->
         <div class="floating-status" @click="openCurrentEvent()">
-            <div class="pr-5 border-r border-gray-100 flex items-center">
-                <i class="fas fa-compass text-[#8E2D4F] text-2xl"></i>
+            <div class="pr-4 border-r border-gray-100 flex items-center"><i class="fas fa-compass text-[#8E2D4F] text-xl"></i></div>
+            <div class="flex-1 px-4 overflow-hidden">
+                <div class="flex items-center space-x-2 mb-0.5"><span class="text-xl font-black serif" x-text="itinerary[currentDay].events[activeEventIndex].time"></span><span class="text-[8px] font-black text-blue-500 uppercase tracking-widest">LIVE</span></div>
+                <div class="text-[12px] font-black truncate serif opacity-70" x-text="itinerary[currentDay].events[activeEventIndex].title"></div>
             </div>
-            <div class="flex-1 px-5 overflow-hidden">
-                <div class="flex items-center space-x-2 mb-0.5">
-                    <span class="text-2xl font-black serif" x-text="itinerary[currentDay].events[activeEventIndex].time"></span>
-                    <span class="text-[9px] font-black text-blue-500 uppercase tracking-widest">Live Sync</span>
-                </div>
-                <div class="text-[13px] font-black truncate serif opacity-80" x-text="itinerary[currentDay].events[activeEventIndex].title"></div>
-            </div>
-            <i class="fas fa-chevron-right text-gray-200 text-sm"></i>
+            <i class="fas fa-chevron-right text-gray-200 text-xs"></i>
         </div>
     </div>
 
-    <!-- TAB 2: 記帳 -->
-    <div x-show="activeTab === 'expenses'" class="p-10 pt-24" x-cloak>
-        <h2 class="serif text-3xl font-black mb-8">旅費預算</h2>
-        <div class="bg-[#2D2424] p-8 rounded-[40px] text-white shadow-2xl mb-10">
-            <p class="text-[10px] opacity-40 mb-2 uppercase font-black tracking-[4px]">Total Spent HKD</p>
-            <h3 class="text-5xl font-black serif">HK$ <span x-text="totalHKD"></span></h3>
-            <p class="mt-6 text-[9px] opacity-30 font-bold">LIVE RATE: 1 JPY = <span x-text="rate"></span> HKD</p>
-        </div>
-        <div class="bg-white p-6 rounded-[30px] space-y-4 mb-8 shadow-sm">
-            <input type="text" x-model="newExpName" placeholder="消費項目內容" class="w-full bg-gray-50 border-none rounded-2xl p-4 text-xs font-black">
-            <div class="flex space-x-3">
-                <input type="number" x-model="newExpAmount" placeholder="¥日圓金額" class="flex-1 bg-gray-50 border-none rounded-2xl p-4 text-xs font-black">
-                <button @click="addExpense" class="bg-[#8E2D4F] text-white px-8 rounded-2xl font-black text-xs">新增項目</button>
+    <!-- TAB 2: 緊湊型記帳 -->
+    <div x-show="activeTab === 'expenses'" class="pb-32" x-cloak>
+        <div class="budget-header">
+            <h2 class="serif text-sm opacity-50 font-black uppercase tracking-widest mb-1">Trip Expenses</h2>
+            <div class="flex items-baseline space-x-2">
+                <span class="text-3xl font-black serif">HK$ <span x-text="totalHKD"></span></span>
+                <span class="text-[9px] opacity-30 font-bold">¥1 = <span x-text="rate"></span></span>
             </div>
         </div>
-        <div class="space-y-3">
-            <template x-for="(exp, index) in expenses" :key="index">
-                <div class="bg-white p-5 rounded-2xl flex justify-between items-center border border-gray-50">
-                    <div><h4 class="font-black text-sm mb-1" x-text="exp.name"></h4><p class="text-[10px] opacity-40 font-bold" x-text="'¥' + exp.jpy + ' → HK$' + (exp.jpy * rate).toFixed(1)"></p></div>
-                    <button @click="deleteExpense(index)" class="text-red-200 w-12 h-12 flex items-center justify-end"><i class="fas fa-trash"></i></button>
-                </div>
-            </template>
+
+        <div class="px-6">
+            <!-- 纖細輸入框 -->
+            <div class="compact-input mb-8 shadow-sm">
+                <input type="text" x-model="newExpName" placeholder="項目" class="flex-1 bg-white">
+                <input type="number" x-model="newExpAmount" placeholder="¥金額" class="w-24 bg-gray-50 text-right pr-4">
+                <button @click="addExpense" class="bg-[#8E2D4F] text-white px-5 font-black text-[10px]">ADD</button>
+            </div>
+
+            <!-- 清單列表 -->
+            <div class="space-y-1">
+                <template x-for="(exp, index) in expenses" :key="index">
+                    <div class="expense-item">
+                        <div class="flex-1">
+                            <h4 class="font-black text-[13px]" x-text="exp.name"></h4>
+                            <p class="text-[9px] opacity-40 font-bold" x-text="'¥' + exp.jpy + ' → HK$' + (exp.jpy * rate).toFixed(1)"></p>
+                        </div>
+                        <button @click="deleteExpense(index)" class="w-10 h-10 flex items-center justify-end text-red-200"><i class="fas fa-times text-xs"></i></button>
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
 
     <!-- TAB 3: 航班 -->
-    <div x-show="activeTab === 'flights'" class="p-10 pt-24" x-cloak>
-        <h2 class="serif text-3xl font-black mb-10 text-center text-[#8E2D4F]">航班與預約</h2>
-        <div class="space-y-5">
+    <div x-show="activeTab === 'flights'" class="p-10 pt-20" x-cloak>
+        <h2 class="serif text-xl font-black mb-8 text-center">航班詳情</h2>
+        <div class="space-y-4">
             <template x-for="f in flights" :key="f.no">
-                <div class="bg-white rounded-[35px] p-7 border-l-[8px] border-[#8E2D4F] flex justify-between items-center shadow-sm">
-                    <div><span class="text-[10px] opacity-30 font-black block mb-2" x-text="f.date"></span><span class="text-sm font-black serif" x-text="f.no"></span></div>
-                    <div class="flex items-center space-x-8">
-                        <div class="text-center"><h4 class="text-lg font-black serif" x-text="f.from"></h4><p class="text-[10px] opacity-40 font-black" x-text="f.depTime"></p></div>
-                        <i class="fas fa-plane-departure text-gray-100 text-2xl"></i>
-                        <div class="text-center"><h4 class="text-lg font-black serif" x-text="f.to"></h4><p class="text-[10px] opacity-40 font-black" x-text="f.arrTime"></p></div>
+                <div class="bg-white rounded-2xl p-5 border-l-4 border-[#8E2D4F] flex justify-between items-center shadow-xs">
+                    <div><span class="text-[8px] opacity-30 block font-black" x-text="f.date"></span><span class="text-xs font-black serif text-[#8E2D4F]" x-text="f.no"></span></div>
+                    <div class="flex items-center space-x-6 text-center">
+                        <div><h4 class="text-sm font-black serif" x-text="f.from"></h4><p class="text-[8px] opacity-40 font-black" x-text="f.depTime"></p></div>
+                        <i class="fas fa-plane text-gray-100 text-xs"></i>
+                        <div><h4 class="text-sm font-black serif" x-text="f.to"></h4><p class="text-[8px] opacity-40 font-black" x-text="f.arrTime"></p></div>
                     </div>
                 </div>
             </template>
         </div>
     </div>
 
-    <!-- V19 全屏感應下拉彈窗 -->
-    <template x-if="modalOpen">
-        <div class="modal-overlay" @click="modalOpen = false"></div>
-    </template>
-    
-    <div x-show="modalOpen" x-cloak
-         class="modal-container" 
-         :class="isDragging ? 'dragging' : ''"
-         :style="'transform: translateY(' + translateY + 'px)'"
-         @touchstart="handleTouchStart($event)"
-         @touchmove="handleTouchMove($event)"
-         @touchend="handleTouchEnd($event)">
-        
-        <!-- 固定拉桿區域 -->
-        <div class="pt-5 pb-3 w-full flex justify-center bg-white">
-            <div class="w-14 h-1.5 bg-gray-100 rounded-full"></div>
-        </div>
-
+    <!-- 詳情/地圖彈窗 (V19 手勢版) -->
+    <template x-if="modalOpen"><div class="modal-overlay" @click="modalOpen = false"></div></template>
+    <div x-show="modalOpen" x-cloak class="modal-container" :class="isDragging ? 'dragging' : ''" :style="'transform: translateY(' + translateY + 'px)'" @touchstart="handleTouchStart($event)" @touchmove="handleTouchMove($event)" @touchend="handleTouchEnd($event)">
+        <div class="pt-5 pb-2 w-full flex justify-center bg-white"><div class="w-12 h-1 bg-gray-100 rounded-full"></div></div>
         <div id="modal-scroll" class="modal-scroll-area px-8 pb-16">
-            <div class="mt-4 mb-8">
-                <span class="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg uppercase tracking-[2px]" x-text="activeEvent.type"></span>
-                <h2 class="serif text-3xl font-black mt-4 leading-tight text-[#2D2424]" x-text="activeEvent.title"></h2>
-            </div>
-            
-            <template x-if="activeEvent.mapCode">
-                <div class="mb-8 py-5 px-6 bg-red-50 rounded-[28px] border border-dashed border-red-200 flex justify-between items-center">
-                    <span class="text-[10px] font-black text-red-800 opacity-50 uppercase tracking-widest">MapCode (導航專用)</span>
-                    <span class="font-mono text-base font-black text-red-800" x-text="activeEvent.mapCode"></span>
-                </div>
-            </template>
-
-            <div class="rounded-[40px] overflow-hidden h-64 bg-gray-50 mb-8 shadow-inner border border-gray-100">
-                <iframe width="100%" height="100%" frameborder="0" :src="'https://maps.google.com/maps?q=' + encodeURIComponent(activeEvent.title) + '&t=&z=15&ie=UTF8&iwloc=&output=embed'"></iframe>
-            </div>
-
-            <div class="bg-[#FDFBFA] rounded-[35px] p-8 mb-10 border border-[#F0E6E1]">
-                <div class="flex items-center text-[#8E2D4F] font-black text-[12px] mb-5 uppercase tracking-[4px]">
-                    <i class="fas fa-feather-pointed mr-3"></i> 旅遊導購筆記
-                </div>
-                <div class="text-[15px] leading-relaxed text-gray-700 font-medium" x-html="activeEvent.guide || activeEvent.desc"></div>
-            </div>
-
-            <a :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(activeEvent.title)" class="block w-full bg-[#2D2424] text-white text-center py-6 rounded-[25px] font-black text-base uppercase tracking-[4px] shadow-2xl mb-12 active:scale-95 transition-transform">開啟 Google Maps 導航</a>
+            <div class="mt-4 mb-6"><span class="text-[9px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded uppercase tracking-widest" x-text="activeEvent.type"></span><h2 class="serif text-xl font-black mt-3 leading-tight text-[#2D2424]" x-text="activeEvent.title"></h2></div>
+            <template x-if="activeEvent.mapCode"><div class="mb-6 py-3 px-5 bg-red-50 rounded-2xl border border-dashed border-red-200 flex justify-between items-center"><span class="text-[9px] font-black text-red-800 opacity-50 uppercase tracking-widest">MapCode</span><span class="font-mono text-sm font-black text-red-800" x-text="activeEvent.mapCode"></span></div></template>
+            <div class="rounded-3xl overflow-hidden h-52 bg-gray-50 mb-6 border border-gray-100 shadow-inner"><iframe width="100%" height="100%" frameborder="0" :src="'https://maps.google.com/maps?q=' + encodeURIComponent(activeEvent.title) + '&t=&z=15&ie=UTF8&iwloc=&output=embed'"></iframe></div>
+            <div class="bg-[#FDFBFA] rounded-[30px] p-6 mb-8 border border-[#F0E6E1]"><div class="flex items-center text-[#8E2D4F] font-black text-[10px] mb-4 uppercase tracking-[3px]"><i class="fas fa-star mr-2"></i> 導遊攻略</div><div class="text-[13px] leading-relaxed text-gray-600 font-medium" x-html="activeEvent.guide || activeEvent.desc"></div></div>
+            <a :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(activeEvent.title)" class="block w-full bg-[#2D2424] text-white text-center py-5 rounded-2xl font-black text-xs uppercase tracking-[3px] shadow-lg active:scale-95 transition-transform mb-10">Google Maps 導航</a>
         </div>
     </div>
 
     <!-- 底部導覽 -->
     <nav class="tab-nav">
-        <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-[#8E2D4F]' : 'text-gray-200'"><i class="fas fa-layer-group text-xl"></i></button>
-        <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-[#8E2D4F]' : 'text-gray-200'"><i class="fas fa-calculator text-xl"></i></button>
-        <button @click="activeTab = 'flights'" :class="activeTab === 'flights' ? 'text-[#8E2D4F]' : 'text-gray-200'"><i class="fas fa-ticket-simple text-xl"></i></button>
+        <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-[#8E2D4F]' : 'text-gray-200'"><i class="fas fa-calendar-day text-lg"></i></button>
+        <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-[#8E2D4F]' : 'text-gray-200'"><i class="fas fa-wallet text-lg"></i></button>
+        <button @click="activeTab = 'flights'" :class="activeTab === 'flights' ? 'text-[#8E2D4F]' : 'text-gray-200'"><i class="fas fa-plane text-lg"></i></button>
     </nav>
 
     <script>
         function travelApp() {
             return {
-                currentDay: 1,
-                activeTab: 'itinerary',
-                activeEventIndex: 0,
-                modalOpen: false,
-                activeEvent: {},
-                expenses: JSON.parse(localStorage.getItem('trip_exp_v19') || '[]'),
-                newExpName: '',
-                newExpAmount: '',
-                rate: 0.0518,
-                
-                // 手勢相關變數
-                startY: 0,
-                translateY: 0,
-                isDragging: false,
-                modalScrollTop: 0,
+                currentDay: 1, activeTab: 'itinerary', activeEventIndex: 0, modalOpen: false, activeEvent: {},
+                expenses: JSON.parse(localStorage.getItem('trip_exp_v20') || '[]'),
+                newExpName: '', newExpAmount: '', rate: 0.0515,
+                startY: 0, translateY: 0, isDragging: false, modalScrollTop: 0,
 
                 async initApp() {
                     this.syncStatus();
@@ -245,97 +185,51 @@
 
                 syncStatus() {
                     if (this.activeTab !== 'itinerary') return;
-                    const triggerPoint = window.innerHeight * 0.35;
-                    
-                    // 強制鎖定頂部第一個景點
-                    if (window.scrollY < 30) {
-                        this.activeEventIndex = 0;
-                        this.updateHighlight(0);
-                        return;
-                    }
-
+                    if (window.scrollY < 30) { this.activeEventIndex = 0; this.updateHighlight(0); return; }
                     const events = this.itinerary[this.currentDay].events;
+                    const trigger = window.innerHeight * 0.35;
                     let targetIdx = 0;
                     events.forEach((_, i) => {
                         const el = document.getElementById('event-' + i);
-                        if (el && el.getBoundingClientRect().top <= triggerPoint) {
-                            targetIdx = i;
-                        }
+                        if (el && el.getBoundingClientRect().top <= trigger) targetIdx = i;
                     });
-
-                    // 強制鎖定底部最後一個景點
-                    if ((window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 70)) {
-                        targetIdx = events.length - 1;
-                    }
-
+                    if ((window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 70)) targetIdx = events.length - 1;
                     this.activeEventIndex = targetIdx;
                     this.updateHighlight(targetIdx);
                 },
 
                 updateHighlight(idx) {
-                    document.querySelectorAll('.js-event-item').forEach((el, i) => {
-                        el.classList.toggle('is-active', i === idx);
-                    });
+                    document.querySelectorAll('.js-event-item').forEach((el, i) => { el.classList.toggle('is-active', i === idx); });
                 },
 
-                // V19 全屏幕下拉關閉手勢邏輯
                 handleTouchStart(e) {
                     const scrollArea = document.getElementById('modal-scroll');
                     this.modalScrollTop = scrollArea.scrollTop;
                     this.startY = e.touches[0].clientY;
                     this.isDragging = true;
                 },
-
                 handleTouchMove(e) {
                     if (!this.isDragging) return;
-                    
-                    const currentY = e.touches[0].clientY;
-                    const deltaY = currentY - this.startY;
-
-                    // 只有在彈窗滾動到最頂端，且手指是向下滑動時，才觸發關閉位移
-                    if (this.modalScrollTop <= 0 && deltaY > 0) {
-                        e.preventDefault(); // 禁用原生滾動，接管位移
-                        this.translateY = deltaY;
-                    } else {
-                        // 否則，這是一個正常的內部滾動行為，不應觸發關閉
-                        this.translateY = 0;
-                        // 如果用戶在滑動過程中捲動了內容，則不再視為關閉手勢
-                        if (deltaY < 0) this.isDragging = false; 
-                    }
+                    let delta = e.touches[0].clientY - this.startY;
+                    if (this.modalScrollTop <= 0 && delta > 0) { e.preventDefault(); this.translateY = delta; }
+                    else { this.translateY = 0; if (delta < 0) this.isDragging = false; }
                 },
-
                 handleTouchEnd() {
-                    if (this.translateY > 120) {
-                        this.modalOpen = false; // 下拉超過閾值，關閉
-                    }
-                    this.isDragging = false;
-                    this.translateY = 0;
+                    if (this.translateY > 120) this.modalOpen = false;
+                    this.isDragging = false; this.translateY = 0;
                 },
 
-                openCurrentEvent() {
-                    this.activeEvent = this.itinerary[this.currentDay].events[this.activeEventIndex];
-                    this.modalOpen = true;
-                },
-                changeDay(idx) {
-                    this.currentDay = idx;
-                    this.activeEventIndex = 0;
-                    window.scrollTo({ top: 0, behavior: 'instant' });
-                    setTimeout(() => this.syncStatus(), 50);
-                },
+                openCurrentEvent() { this.activeEvent = this.itinerary[this.currentDay].events[this.activeEventIndex]; this.modalOpen = true; },
+                changeDay(idx) { this.currentDay = idx; this.activeEventIndex = 0; window.scrollTo({ top: 0, behavior: 'instant' }); setTimeout(() => this.syncStatus(), 50); },
                 openEvent(e) { this.activeEvent = e; this.modalOpen = true; },
                 addExpense() {
                     if(!this.newExpName || !this.newExpAmount) return;
                     this.expenses.push({ name: this.newExpName, jpy: parseFloat(this.newExpAmount) });
                     this.newExpName = ''; this.newExpAmount = '';
-                    localStorage.setItem('trip_exp_v19', JSON.stringify(this.expenses));
+                    localStorage.setItem('trip_exp_v20', JSON.stringify(this.expenses));
                 },
-                deleteExpense(i) {
-                    this.expenses.splice(i, 1);
-                    localStorage.setItem('trip_exp_v19', JSON.stringify(this.expenses));
-                },
-                get totalHKD() {
-                    return this.expenses.reduce((sum, item) => sum + (item.jpy * this.rate), 0).toFixed(1);
-                },
+                deleteExpense(i) { this.expenses.splice(i, 1); localStorage.setItem('trip_exp_v20', JSON.stringify(this.expenses)); },
+                get totalHKD() { return this.expenses.reduce((sum, item) => sum + (item.jpy * this.rate), 0).toFixed(1); },
 
                 flights: [
                     { no: 'NH1914', date: '28 MAR', from: 'HKG', to: 'HND', depTime: '23:55', arrTime: '04:55' },
@@ -345,64 +239,53 @@
                 ],
 
                 itinerary: [
-                    { dateNum: '28', week: 'SAT', city: '東京', weatherLabel: '晴', temp: '12-18°C', events: [
-                        { time: '23:55', type: 'Flight', title: '全日空 NH1914', desc: '香港直飛羽田機場。' }
-                    ]},
-                    { dateNum: '29', week: 'SUN', city: '仁淀川', weatherLabel: '晴朗', temp: '15-22°C', events: [
-                        { time: '08:00', type: 'Car', title: 'Toyota Rent (TAK)', mapCode: '60 523 045*55', booked: true, guide: '<b>取車：預約號 98172536000</b><br>租車後前往仁淀川町 (車程 3 小時)。' },
-                        { time: '12:00', type: 'Food', title: '西村商店 (佐川店)', mapCode: '474 200 445*22', must: '炙燒鰹魚定食', guide: '當地最頂級鰹魚體驗。' },
-                        { time: '13:20', type: 'Spot', title: '仁淀川 Crystal Kayak', guide: '<b>1:20pm 預約</b><br>在仁淀藍清流上體驗透明獨木舟。' },
-                        { time: '15:30', type: 'Spot', title: '久喜花桃、ひょうたん桜', mapCode: '474 532 234*11', guide: '包含久喜花桃與引地橋花桃巡禮。' },
-                        { time: '18:30', type: 'Hotel', title: '星ふるヴィレッジ TENGU', mapCode: '681 448 376*74', guide: 'CI 5pm。全日本最美觀星飯店。' }
+                    { dateNum: '28', week: 'SAT', city: '東京', weatherLabel: '晴', temp: '12-18°C', events: [{ time: '23:55', type: 'Flight', title: '全日空 NH1914', desc: '啟程飛往羽田。' }]},
+                    { dateNum: '29', week: 'SUN', city: '仁淀川', weatherLabel: '晴', temp: '15-22°C', events: [
+                        { time: '08:00', type: 'Car', title: 'Toyota Rent (TAK)', mapCode: '60 523 045*55', booked: true, guide: '<b>預約號 98172536000</b>' },
+                        { time: '12:00', type: 'Food', title: '西村商店 (佐川店)', must: '炙燒鰹魚', guide: '在地美食首選。' },
+                        { time: '13:20', type: 'Spot', title: '仁淀川 Crystal Kayak', guide: '<b>1:20pm 預約</b>' },
+                        { time: '18:30', type: 'Hotel', title: '星ふるヴィレッジ TENGU', mapCode: '681 448 376*74' }
                     ]},
                     { dateNum: '30', week: 'MON', city: '四萬十', weatherLabel: '晴', temp: '13-20°C', events: [
-                        { time: '10:00', type: 'Spot', title: '天狗高原 & 白龍湖', mapCode: '681 448 376*74', guide: '喀斯特地形絕景。<b>白龍湖</b>水色夢幻。' },
-                        { time: '11:30', type: 'Spot', title: '檮原町 (隈研吾)', mapCode: '681 221 445*33', guide: '包含雲之上圖書館。' },
-                        { time: '12:30', type: 'Food', title: 'かざぐるま / くさぶき', guide: '推薦當地風味蕎麥麵。' },
-                        { time: '16:00', type: 'Spot', title: '岩本寺 Supermarket', guide: '<b>⚠️ 9pm 關門</b><br>入住宿坊前最後補給。' },
-                        { time: '18:30', type: 'Hotel', title: '岩本寺 (宿坊)', mapCode: '440 439 881*66', guide: '體驗佛教文化住宿。CI 3pm。' }
+                        { time: '10:00', type: 'Spot', title: '天狗高原 & 白龍湖', guide: '喀斯特絕景。' },
+                        { time: '16:00', type: 'Spot', title: '岩本寺 Supermarket', guide: '<b>⚠️ 9pm 關門</b>' },
+                        { time: '18:30', type: 'Hotel', title: '岩本寺 (宿坊)', mapCode: '440 439 881*66' }
                     ]},
                     { dateNum: '31', week: 'TUE', city: '四萬十', weatherLabel: '晴', temp: '14-23°C', events: [
-                        { time: '08:30', type: 'Food', title: 'Breakfast: Sotoffice', desc: '河景早餐體驗。' },
-                        { time: '12:30', type: 'Food', title: '自由軒 本店', must: '辛子味噌拉麵', guide: '超高人氣在地拉麵。' },
-                        { time: '15:30', type: 'Food', title: '茶農家的店 あすなろ', mapCode: '440 445 667*88', guide: '<b>⚠️ LO 3:30pm</b>' },
-                        { time: '17:00', type: 'Hotel', title: '瀧乃元 近藤家', mapCode: '440 560 123*44', guide: '一休推薦名宿。CI 4pm。' }
+                        { time: '12:30', type: 'Food', title: '自由軒 本店', must: '味噌拉麵' },
+                        { time: '17:00', type: 'Hotel', title: '瀧乃元 近藤家', mapCode: '440 560 123*44' }
                     ]},
                     { dateNum: '01', week: 'WED', city: '松山', weatherLabel: '晴', temp: '14-21°C', events: [
-                        { time: '11:30', type: 'Spot', title: 'ハタダできたてお菓子館', must: '栗タルト', guide: '必買四國伴手禮。' },
-                        { time: '15:00', type: 'Spot', title: '道後溫泉散策', guide: '神隱少女靈感地。圓滿寺結緣。' },
+                        { time: '11:30', type: 'Spot', title: 'ハタダできたてお菓子館', must: '栗タルト' },
+                        { time: '15:00', type: 'Spot', title: '道後溫泉', guide: '神隱少女靈感地。' },
                         { time: '16:00', type: 'Hotel', title: '山の手別邸 葉隱', mapCode: '53 348 012*33' }
                     ]},
                     { dateNum: '02', week: 'THU', city: '香川', weatherLabel: '多雲', temp: '12-20°C', events: [
-                        { time: '12:00', type: 'Spot', title: '雲邊寺山頂公園', mapCode: '337 766 852*17', guide: '天空之鞦韆，展望香川全景。' },
-                        { time: '16:30', type: 'Spot', title: '紫雲出山 (集合)', guide: '<b>⚠️ 嚴格準時 16:30 報到</b><br>領車上山看夕陽與櫻花。' },
-                        { time: '20:30', type: 'Food', title: 'すし遊館あさひ', mapCode: '77 123 445*66', guide: '晚餐名店。鄰近 AEON。' },
+                        { time: '12:00', type: 'Spot', title: '雲邊寺山頂公園', mapCode: '337 766 852*17' },
+                        { time: '16:30', type: 'Spot', title: '紫雲出山 (16:30 集合)', guide: '<b>⚠️ 嚴格準時</b>' },
                         { time: '22:00', type: 'Hotel', title: 'Guesthouse Ihatov', mapCode: '77 012 334*55' }
                     ]},
                     { dateNum: '03', week: 'FRI', city: '香川', weatherLabel: '晴', temp: '11-19°C', events: [
-                        { time: '09:00', type: 'Food', title: '手打ちうどん ひさ枝', guide: '香川必吃烏龍麵。' },
-                        { time: '11:00', type: 'Spot', title: '古道具倉庫 Ken', booked: true, guide: '<b>11am 預約</b><br>設計師與文青必訪。' },
-                        { time: '14:00', type: 'Spot', title: '金刀比羅宮', guide: '登上 1368 階。導航定：Toramaru Parking。' },
+                        { time: '11:00', type: 'Spot', title: '古道具倉庫 Ken', booked: true },
+                        { time: '14:00', type: 'Spot', title: '金刀比羅宮', guide: '導航：<b>Friend Parking Lot</b>' },
                         { time: '17:30', type: 'Hotel', title: '三豐鶴 TOJI', mapCode: '757 123 998*77' }
                     ]},
                     { dateNum: '04', week: 'SAT', city: '松山', weatherLabel: '晴', temp: '15-22°C', events: [
-                        { time: '09:00', type: 'Food', title: '須崎食料品店', guide: '導航定位：<b>Friend Parking Lot</b>' },
-                        { time: '15:00', type: 'Spot', title: '迪士尼與武者巡遊', guide: '松山春祭重點！2:30pm 霸位看巡遊。' },
+                        { time: '09:00', type: 'Food', title: '須崎食料品店', guide: '絕讚烏龍麵。' },
+                        { time: '15:00', type: 'Spot', title: '迪士尼與武者巡遊', guide: '松山春祭 3pm。' },
                         { time: '22:00', type: 'Hotel', title: 'New Grande Mimatsu', mapCode: '60 607 123*44' }
                     ]},
                     { dateNum: '05', week: 'SUN', city: '高松', weatherLabel: '晴', temp: '14-20°C', events: [
-                        { time: '11:00', type: 'Spot', title: '栗林公園', mapCode: '60 577 445*11', guide: '日本最美名園之一。' },
-                        { time: '17:30', type: 'Car', title: '高松機場還車', guide: '完成自駕部分，還車前需滿油。' },
-                        { time: '19:40', type: 'Flight', title: 'NH540 (TAK➜HND)', desc: '返飛東京。' }
+                        { time: '11:00', type: 'Spot', title: '栗林公園', mapCode: '60 577 445*11' },
+                        { time: '17:30', type: 'Car', title: '高松機場還車', guide: '滿油還車。' },
+                        { time: '19:40', type: 'Flight', title: 'NH540 (TAK➜HND)' }
                     ]},
                     { dateNum: '06', week: 'MON', city: '東京', weatherLabel: '晴', temp: '12-19°C', events: [
-                        { time: '10:00', type: 'Spot', title: '淺草/花屋敷/扭蛋', guide: '最後東京採買散策。' },
-                        { time: '13:00', type: 'Spot', title: '杢目金屋', booked: true, guide: '<b>1pm 預約</b>' },
-                        { time: '22:00', type: 'Transport', title: '前往羽田機場', desc: '凌晨航班返港。' }
+                        { time: '10:00', type: 'Spot', title: '淺草散策', guide: '最後東京採買。' },
+                        { time: '13:00', type: 'Spot', title: '杢目金屋', booked: true },
+                        { time: '22:00', type: 'Transport', title: '前往羽田' }
                     ]},
-                    { dateNum: '07', week: 'TUE', city: '香港', weatherLabel: '-', temp: '-', events: [
-                        { time: '01:35', type: 'Flight', title: 'NH813 (HND➜HKG)', desc: '抵家。' }
-                    ]}
+                    { dateNum: '07', week: 'TUE', city: '香港', weatherLabel: '-', temp: '-', events: [{ time: '01:35', type: 'Flight', title: 'NH813 (HND➜HKG)', desc: '平安抵港。' }]}
                 ]
             }
         }
