@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Japan Drive 2026 | V24 Pro</title>
+    <title>Japan Drive 2026 | V25 ProAlign</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
         .serif { font-family: 'Noto Serif JP', serif; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* 行程線條 */
+        /* 行程動態高亮 */
         .timeline-line { position: absolute; left: 50px; top: 0; bottom: 0; width: 1px; background: #E5E1D8; z-index: 0; }
         .event-card { position: relative; z-index: 10; padding-left: 65px; margin-bottom: 70px; transition: all 0.4s cubic-bezier(0.1, 0.9, 0.2, 1); opacity: 0.15; transform: scale(0.96); }
         .event-card.is-active { opacity: 1; transform: scale(1); }
@@ -43,10 +43,14 @@
 
         .tab-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 0.5px solid #eee; display: flex; justify-content: space-around; padding: 14px 0 calc(12px + env(safe-area-inset-bottom)); z-index: 1001; }
         
-        /* 記帳頁面對齊修復 */
+        /* 記帳頁對齊強化樣式 */
         .budget-card { background: #2D2424; color: white; border-radius: 24px; padding: 24px; margin-bottom: 24px; }
-        .expense-row { display: grid; grid-template-columns: 1fr auto 40px; align-items: center; padding: 16px 0; border-bottom: 0.5px solid #F0EBE0; }
         .tabular-nums { font-variant-numeric: tabular-nums; }
+        .expense-item-row { display: flex; align-items: center; padding: 16px 0; border-bottom: 0.5px solid #F0EBE0; width: 100%; }
+        .col-name { flex: 1; min-width: 0; }
+        .col-jpy { width: 70px; text-align: right; flex-shrink: 0; }
+        .col-hkd { width: 95px; text-align: right; flex-shrink: 0; }
+        .col-del { width: 40px; text-align: right; flex-shrink: 0; }
     </style>
 </head>
 <body x-data="travelApp()" x-init="initApp()" 
@@ -68,9 +72,9 @@
             </div>
         </header>
 
-        <!-- 天氣與地點按鈕 (點擊跳轉) -->
+        <!-- 天氣點擊跳轉區 (解決 Undefined) -->
         <div class="mx-8 my-5 px-5 py-3 bg-white/60 rounded-2xl flex justify-between items-center border border-white active:scale-95 transition-transform" 
-             @click="openWeather(itinerary[currentDay]?.city)">
+             @click="openWeather(itinerary[currentDay]?.city ?? 'Japan')">
             <div class="flex items-center text-[10px] font-black uppercase">
                 <i class="fas fa-location-arrow mr-2 text-[#8E2D4F]"></i>
                 <span x-text="itinerary[currentDay]?.city ?? ''"></span>
@@ -78,7 +82,7 @@
             <div class="flex items-center text-orange-600 font-black">
                 <span class="text-xs mr-3" x-text="itinerary[currentDay]?.weatherLabel ?? ''"></span>
                 <span class="serif text-sm mr-2" x-text="itinerary[currentDay]?.temp ?? ''"></span>
-                <i class="fas fa-external-link-alt text-[10px] opacity-30"></i>
+                <i class="fas fa-external-link-alt text-[9px] opacity-20"></i>
             </div>
         </div>
 
@@ -95,8 +99,8 @@
             </template>
         </main>
 
-        <!-- 懸浮同步狀態欄 -->
-        <template x-if="itinerary[currentDay]?.events && itinerary[currentDay]?.events[activeEventIndex]">
+        <!-- 懸浮同步狀態欄 (解決 Undefined) -->
+        <template x-if="itinerary[currentDay]?.events?.[activeEventIndex]">
             <div class="floating-status" @click="openCurrentEvent()">
                 <div class="pr-4 border-r border-gray-100 flex items-center"><i class="fas fa-compass text-[#8E2D4F] text-xl"></i></div>
                 <div class="flex-1 px-4 overflow-hidden">
@@ -111,41 +115,46 @@
         </template>
     </div>
 
-    <!-- TAB 2: 記帳 (修復對齊版) -->
+    <!-- TAB 2: 記帳 (絕對對齊重構版) -->
     <div x-show="activeTab === 'expenses'" class="min-h-screen pb-40 px-8 pt-20" x-cloak>
         <h2 class="serif text-2xl font-black mb-6">Trip Expenses</h2>
         
         <div class="budget-card shadow-xl">
             <p class="text-[10px] opacity-50 font-black uppercase tracking-widest mb-2">Total Expenditure</p>
-            <div class="flex items-baseline space-x-2">
-                <span class="text-4xl font-black serif tabular-nums">HK$ <span x-text="totalHKD"></span></span>
-            </div>
-            <p class="text-[9px] opacity-30 font-bold uppercase mt-2">Rate: 1 JPY = <span x-text="rate"></span> HKD</p>
+            <span class="text-4xl font-black serif tabular-nums">HK$ <span x-text="totalHKD"></span></span>
+            <p class="text-[9px] opacity-30 font-bold uppercase mt-2 tracking-tighter">Rate: 1 JPY = <span x-text="rate"></span> HKD</p>
         </div>
 
         <!-- 穩定輸入組 -->
-        <div class="flex items-center space-x-2 mb-10 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
-            <input type="text" x-model="newExpName" placeholder="項目" class="flex-1 bg-transparent px-3 py-2 text-sm font-bold outline-none">
-            <input type="number" x-model="newExpAmount" placeholder="¥" class="w-20 bg-gray-50 px-2 py-2 text-sm font-black text-right rounded-lg outline-none">
+        <div class="flex items-center space-x-2 mb-8 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
+            <input type="text" x-model="newExpName" placeholder="項目內容" class="flex-1 bg-transparent px-3 py-2 text-sm font-bold outline-none">
+            <input type="number" x-model="newExpAmount" placeholder="¥日元" class="w-20 bg-gray-50 px-2 py-2 text-sm font-black text-right rounded-lg outline-none tabular-nums">
             <button @click="addExpense" class="bg-[#8E2D4F] text-white px-5 py-3 rounded-xl font-black text-[10px]">ADD</button>
         </div>
 
-        <!-- 記帳列表 (Grid 對齊) -->
-        <div class="space-y-0">
+        <!-- 記帳列表 (完美對齊版) -->
+        <div class="w-full">
+            <!-- 表頭提示 -->
+            <div class="flex text-[8px] font-black opacity-30 uppercase tracking-widest pb-2 border-b border-gray-100">
+                <div class="flex-1">Description</div>
+                <div class="w-[70px] text-right">JPY</div>
+                <div class="w-[95px] text-right">HKD (EST)</div>
+                <div class="w-[40px]"></div>
+            </div>
+            
             <template x-for="(exp, index) in expenses" :key="index">
-                <div class="expense-row">
-                    <div class="overflow-hidden">
-                        <h4 class="font-black text-[14px] truncate text-[#2D2424]" x-text="exp.name"></h4>
-                        <div class="flex items-center space-x-2 mt-0.5">
-                            <span class="text-[10px] font-bold text-gray-400 tabular-nums" x-text="'¥' + exp.jpy"></span>
-                        </div>
+                <div class="expense-item-row">
+                    <div class="col-name overflow-hidden">
+                        <h4 class="font-black text-[13px] truncate text-[#2D2424]" x-text="exp.name"></h4>
+                        <span class="text-[9px] font-bold text-gray-300 block">Item Recorded</span>
                     </div>
-                    <div class="text-right px-4">
-                        <span class="text-[11px] font-black text-[#8E2D4F] tabular-nums" x-text="'HK$' + (exp.jpy * rate).toFixed(1)"></span>
+                    <div class="col-jpy serif text-[12px] font-bold tabular-nums opacity-40" x-text="'¥'+exp.jpy"></div>
+                    <div class="col-hkd serif text-[14px] font-black text-[#8E2D4F] tabular-nums" x-text="'$'+(exp.jpy * rate).toFixed(1)"></div>
+                    <div class="col-del">
+                        <button @click="deleteExpense(index)" class="text-red-100 active:text-red-400">
+                            <i class="fas fa-times-circle text-lg"></i>
+                        </button>
                     </div>
-                    <button @click="deleteExpense(index)" class="w-10 h-10 flex items-center justify-end text-red-100 active:text-red-400">
-                        <i class="fas fa-times-circle text-lg"></i>
-                    </button>
                 </div>
             </template>
         </div>
@@ -168,7 +177,7 @@
         </div>
     </div>
 
-    <!-- 詳情/地圖彈窗 -->
+    <!-- 詳情/地圖彈窗 (解決 Undefined) -->
     <template x-if="modalOpen"><div class="modal-overlay" @click="modalOpen = false"></div></template>
     <div x-show="modalOpen" x-cloak class="modal-container" :class="isDragging ? 'dragging' : ''" :style="'transform: translateY(' + translateY + 'px)'" @touchstart="handleTouchStart($event)" @touchmove="handleTouchMove($event)" @touchend="handleTouchEnd($event)">
         <div class="pt-5 pb-2 w-full flex justify-center bg-white"><div class="w-12 h-1 bg-gray-100 rounded-full"></div></div>
@@ -182,7 +191,7 @@
             </div>
             <div class="bg-[#FDFBFA] rounded-[30px] p-6 mb-8 border border-[#F0E6E1]">
                 <div class="flex items-center text-[#8E2D4F] font-black text-[10px] mb-4 uppercase tracking-[3px]"><i class="fas fa-star mr-2"></i> 導遊攻略</div>
-                <div class="text-[13px] leading-relaxed text-gray-600 font-medium" x-html="activeEvent.guide || activeEvent.desc"></div>
+                <div class="text-[13px] leading-relaxed text-gray-600 font-medium" x-html="activeEvent?.guide || activeEvent?.desc || ''"></div>
             </div>
             <a :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(activeEvent?.title ?? '')" class="block w-full bg-[#2D2424] text-white text-center py-5 rounded-2xl font-black text-xs uppercase tracking-[3px] shadow-lg active:scale-95 transition-transform mb-10">Google Maps 導航</a>
         </div>
@@ -199,7 +208,7 @@
         function travelApp() {
             return {
                 currentDay: 1, activeTab: 'itinerary', activeEventIndex: 0, modalOpen: false, activeEvent: {},
-                expenses: JSON.parse(localStorage.getItem('trip_exp_v24') || '[]'),
+                expenses: JSON.parse(localStorage.getItem('trip_exp_v25') || '[]'),
                 newExpName: '', newExpAmount: '', rate: 0.0515,
                 touchStartX: 0, startY: 0, translateY: 0, isDragging: false, modalScrollTop: 0,
 
@@ -209,7 +218,7 @@
                         const res = await fetch('https://open.er-api.com/v6/latest/JPY');
                         const data = await res.json();
                         if(data.rates.HKD) this.rate = data.rates.HKD.toFixed(4);
-                    } catch(e) { console.log('Rate Error'); }
+                    } catch(e) { console.log('Rate Update Error'); }
                 },
 
                 syncStatus() {
@@ -262,15 +271,18 @@
                     this.$nextTick(() => { this.syncStatus(); }); 
                 },
                 openEvent(e) { this.activeEvent = e; this.modalOpen = true; },
-                openCurrentEvent() { this.activeEvent = this.itinerary[this.currentDay].events[this.activeEventIndex]; this.modalOpen = true; },
+                openCurrentEvent() { 
+                    const ev = this.itinerary[this.currentDay]?.events?.[this.activeEventIndex];
+                    if(ev) { this.activeEvent = ev; this.modalOpen = true; }
+                },
                 
                 addExpense() {
                     if(!this.newExpName || !this.newExpAmount) return;
                     this.expenses.unshift({ name: this.newExpName, jpy: parseFloat(this.newExpAmount) });
                     this.newExpName = ''; this.newExpAmount = '';
-                    localStorage.setItem('trip_exp_v24', JSON.stringify(this.expenses));
+                    localStorage.setItem('trip_exp_v25', JSON.stringify(this.expenses));
                 },
-                deleteExpense(i) { this.expenses.splice(i, 1); localStorage.setItem('trip_exp_v24', JSON.stringify(this.expenses)); },
+                deleteExpense(i) { this.expenses.splice(i, 1); localStorage.setItem('trip_exp_v25', JSON.stringify(this.expenses)); },
                 get totalHKD() { return this.expenses.reduce((sum, item) => sum + (item.jpy * this.rate), 0).toFixed(1); },
 
                 flights: [
@@ -281,86 +293,89 @@
                 ],
 
                 itinerary: [
-                    { dateNum: '28', week: 'SAT', city: '香港 ➜ 東京', weatherLabel: '晴', temp: '12-18°C', events: [
-                        { time: '23:55', type: 'Flight', title: '全日空 NH1914', desc: '由香港起飛前往羽田。' }
+                    { dateNum: '28', week: 'SAT', city: '香港 ➜ 羽田', weatherLabel: '晴', temp: '12-18°C', events: [
+                        { time: '23:55', type: 'Flight', title: '全日空 NH1914', desc: '啟程飛往東京。' }
                     ]},
                     { dateNum: '29', week: 'SUN', city: '高松 ➜ 仁淀川', weatherLabel: '晴', temp: '15-22°C', events: [
-                        { time: '06:55', type: 'Flight', title: '全日空 NH531 (HND➜TAK)', desc: '國內線轉機。' },
-                        { time: '08:00', type: 'Car', title: 'Toyota rent a car (Tak)', mapCode: '60 523 045*55', guide: '<b>預約番號 98172536000</b>。' },
-                        { time: '12:00', type: 'Food', title: '西村商店 まきのさんの道の駅佐川店', must: '炙燒鰹魚定食', guide: '在地人強推海鮮。' },
+                        { time: '06:55', type: 'Flight', title: '全日空 NH531 (HND➜TAK)', desc: '轉機前往高松。' },
+                        { time: '08:00', type: 'Car', title: 'Toyota rent a car (Tak)', guide: '<b>預約番號 98172536000</b>。' },
+                        { time: '12:00', type: 'Food', title: '西村商店 (佐川店)', must: '炙燒鰹魚', guide: '當地強推。' },
                         { time: '13:20', type: 'Spot', title: '仁淀川 Crystal Kayak', guide: '<b>1:20pm 預約</b>。' },
-                        { time: '15:30', type: 'Spot', title: '上久喜、久喜、引地橋花桃', must: '賞花', guide: '絕美花桃巡禮。' },
+                        { time: '15:30', type: 'Spot', title: '上久喜、久喜、引地橋花桃', must: '賞花', guide: '三大花桃絕景。' },
                         { time: '16:30', type: 'Spot', title: 'ひょうたん桜公園', guide: '百年老櫻花。' },
-                        { time: '18:30', type: 'Food', title: 'Dinner at hotel', desc: '飯店晚餐。' },
-                        { time: '19:00', type: 'Hotel', title: '星ふるヴィレッジ TENGU', mapCode: '681 448 376*74', guide: 'CI 5pm。觀星名店。' }
+                        { time: '18:30', type: 'Food', title: 'Dinner at hotel', desc: '飯店享用晚餐。' },
+                        { time: '19:00', type: 'Hotel', title: '星ふるヴィレッジ TENGU', guide: 'CI 5pm。天狗高原。' }
                     ]},
                     { dateNum: '30', week: 'MON', city: '天狗高原 ➜ 檮原', weatherLabel: '晴', temp: '13-20°C', events: [
                         { time: '08:00', type: 'Food', title: 'Breakfast at hotel', desc: '飯店早餐。' },
-                        { time: '10:00', type: 'Spot', title: '天狗高原 & 白龍湖', guide: '喀斯特地形與秘境湖。' },
-                        { time: '11:00', type: 'Spot', title: '檮原町 (隈研吾建築)', must: '雲之上圖書館', guide: '木建築巡禮。' },
-                        { time: '12:30', type: 'Food', title: 'Lunch: かざぐるま / くさぶき', guide: '當地特色午餐。' },
-                        { time: '14:30', type: 'Car', title: '沿津野町去岩本寺', desc: '絕美山路自駕。' },
+                        { time: '10:00', type: 'Spot', title: '天狗高原 & 白龍湖', guide: '喀斯特地形。' },
+                        { time: '11:00', type: 'Spot', title: '檮原町 (隈研吾建築群)', must: '雲之上圖書館', guide: '木建築巡禮。' },
+                        { time: '12:30', type: 'Food', title: 'Lunch: かざぐるま / くさぶき', guide: '檮原美食。' },
+                        { time: '14:30', type: 'Car', title: '沿津野町去岩本寺', desc: '風景自駕。' },
                         { time: '16:00', type: 'Spot', title: '岩本寺 Supermarket', guide: '<b>⚠️ 9:00pm 關門</b>。' },
                         { time: '18:30', type: 'Food', title: 'Dinner: Oiwai Kitchen', guide: '美味晚餐。' },
                         { time: '19:30', type: 'Hotel', title: '岩本寺 (宿坊)', mapCode: '440 439 881*66' }
                     ]},
                     { dateNum: '31', week: 'TUE', city: '四萬十 ➜ 高知', weatherLabel: '晴', temp: '14-23°C', events: [
-                        { time: '08:30', type: 'Food', title: 'Breakfast: Sotoffice', desc: '質感早餐。' },
-                        { time: '10:00', type: 'Spot', title: '四万十町散策', guide: '清流與沈下橋。' },
-                        { time: '12:30', type: 'Food', title: '自由軒 本店', must: '味噌拉麵', guide: '高知排隊店。' },
-                        { time: '14:00', type: 'Spot', title: '上久喜、久喜、引地橋花桃', desc: '賞花備案。' },
+                        { time: '08:30', type: 'Food', title: 'Breakfast: Sotoffice', desc: '設計感早餐。' },
+                        { time: '10:00', type: 'Spot', title: '四万十町散策', guide: '沈下橋風景。' },
+                        { time: '12:30', type: 'Food', title: '自由軒 本店', must: '辛子味噌拉麵', guide: '排隊店。' },
+                        { time: '14:00', type: 'Spot', title: '上久喜、久喜、引地橋花桃', desc: 'If needed。' },
                         { time: '15:30', type: 'Food', title: '茶農家的店 あすなろ', must: '茶甜點', guide: '<b>⚠️ L.O. 3:30pm</b>。' },
-                        { time: '17:00', type: 'Spot', title: '物產館 (天空之郷・さんさん)', guide: '伴手禮採購。' },
-                        { time: '18:30', type: 'Food', title: 'Dinner at Hotel', desc: '飯店晚餐。' },
+                        { time: '17:00', type: 'Spot', title: '物產館 (天空之郷)', guide: '在地特產。' },
+                        { time: '18:30', type: 'Food', title: 'Dinner at Hotel', desc: '近藤家晚餐。' },
                         { time: '19:30', type: 'Hotel', title: '瀧乃元 近藤家', mapCode: '440 560 123*44' }
                     ]},
                     { dateNum: '01', week: 'WED', city: '松山 ➜ 道後', weatherLabel: '晴', temp: '14-21°C', events: [
                         { time: '08:30', type: 'Food', title: 'Breakfast at hotel', desc: '飯店早餐。' },
-                        { time: '10:30', type: 'Spot', title: '茶堂公園 (櫻花祭)', guide: '在地賞櫻祭。' },
+                        { time: '10:30', type: 'Spot', title: '茶堂公園 (櫻花祭)', guide: '賞櫻祭。' },
                         { time: '11:30', type: 'Spot', title: 'ハタダできたてお菓子館', must: '栗タルト' },
-                        { time: '13:00', type: 'Food', title: '天天丸 重信店', guide: '迴轉壽司 (Optional)。' },
-                        { time: '15:00', type: 'Spot', title: '圓満寺', guide: '結緣勝地。' },
+                        { time: '13:00', type: 'Food', title: '天天丸 重信店', guide: '迴轉壽司。' },
+                        { time: '15:00', type: 'Spot', title: '圓滿寺', guide: '結緣勝地。' },
                         { time: '16:30', type: 'Spot', title: '道後溫泉散策', guide: '神隱少女溫泉。' },
-                        { time: '18:30', type: 'Food', title: 'Dinner at Hotel', desc: '溫泉旅館會席。' },
+                        { time: '18:30', type: 'Food', title: 'Dinner at Hotel', desc: '會席料理。' },
                         { time: '19:30', type: 'Hotel', title: '山の手別邸 葉隱', mapCode: '53 348 012*33' }
                     ]},
                     { dateNum: '02', week: 'THU', city: '雲邊寺 ➜ 香川', weatherLabel: '晴', temp: '12-20°C', events: [
-                        { time: '08:30', type: 'Food', title: 'Breakfast at hotel', desc: '飯店早餐。' },
-                        { time: '12:00', type: 'Spot', title: '雲邊寺山頂公園', must: '天空鞦韆', guide: '絕佳展望。' },
-                        { time: '16:30', type: 'Spot', title: '紫雲出山 (集合要點)', must: '16:30 報到', guide: '<b>⚠️ 集合點：大濱漁港</b>。準時報到領票。' },
-                        { time: '20:00', type: 'Food', title: 'すし遊館あさひ 善通寺店', must: '壽司', guide: '新鮮在地魚貨。' },
+                        { time: '08:30', type: 'Food', title: 'Breakfast at hotel', desc: '早餐。' },
+                        { time: '12:00', type: 'Spot', title: '雲邊寺山頂公園', must: '天空鞦韆', guide: '瀨戶內展望。' },
+                        { time: '16:30', type: 'Spot', title: '紫雲出山 (集合要點)', must: '16:30 報到', guide: '<b>⚠️ 集合點：大濱漁港</b>。準時。' },
+                        { time: '20:00', type: 'Food', title: 'すし遊館あさひ 善通寺店', must: '壽司', guide: '鮮度極佳。' },
                         { time: '21:30', type: 'Spot', title: 'Aeon', guide: '<b>⚠️ 9:00pm 關門</b>。' },
                         { time: '22:00', type: 'Hotel', title: 'Guesthouse Ihatov', mapCode: '77 012 334*55' }
                     ]},
                     { dateNum: '03', week: 'FRI', city: '香川 ➜ 金刀比羅宮', weatherLabel: '晴', temp: '11-19°C', events: [
                         { time: '09:00', type: 'Food', title: 'Breakfast: 手打ちうどん ひさ枝', must: '烏龍麵' },
                         { time: '11:00', type: 'Spot', title: '古道具倉庫 Ken', guide: '<b>11am 預約</b>。' },
-                        { time: '13:00', type: 'Spot', title: '金刀比羅宮', guide: '停車：<b>Toramaruryokansanpaiyuryo Lot</b>。' },
+                        { time: '12:30', type: 'Car', title: '飯田町 ➜ Parking', desc: '約1小時車程。' },
+                        { time: '13:30', type: 'Spot', title: '金刀比羅宮', guide: '定：<b>Toramaruryokansanpaiyuryo Lot</b>。' },
+                        { time: '16:30', type: 'Car', title: '金刀比羅宮 ➜ Hotel', desc: '回程 1hr。' },
                         { time: '17:30', type: 'Food', title: 'Picasso 三野店', desc: '買晚餐。' },
                         { time: '18:30', type: 'Hotel', title: '三豐鶴 TOJI', mapCode: '757 123 998*77' }
                     ]},
                     { dateNum: '04', week: 'SAT', city: '松山春祭', weatherLabel: '晴', temp: '15-22°C', events: [
-                        { time: '09:00', type: 'Food', title: 'Breakfast: 須崎食料品店', must: '烏龍麵', guide: '停車：<b>Friend Parking Lot</b>。' },
-                        { time: '11:00', type: 'Spot', title: '城山公園 睇屋台', guide: '春祭活動。' },
-                        { time: '15:00', type: 'Spot', title: '迪士尼特別巡遊', must: '核心行程', guide: '大街道一帶活動。' },
-                        { time: '17:30', type: 'Spot', title: '大名武者行列', guide: '路經：大街道、千舟町通り。' },
-                        { time: '20:30', type: 'Car', title: '松山 ➜ Hotel', desc: '2.5hr 長程。' },
+                        { time: '09:00', type: 'Food', title: 'Breakfast: 須崎食料品店', must: '烏龍麵', guide: '定：<b>Friend Parking Lot</b>。' },
+                        { time: '11:00', type: 'Spot', title: '城山公園 睇屋台', guide: '祭典。' },
+                        { time: '15:00', type: 'Spot', title: '迪士尼特別巡遊', must: '大街道區', guide: '核心行程。' },
+                        { time: '17:30', type: 'Spot', title: '大名武者行列', guide: '經 ロープウェー商店街。' },
+                        { time: '20:30', type: 'Car', title: '松山 ➜ Hotel', desc: '2.5 小時車程。' },
                         { time: '22:00', type: 'Hotel', title: 'New Grande Mimatsu', mapCode: '60 607 123*44' }
                     ]},
-                    { dateNum: '05', week: 'SUN', city: '高松 ➜ 返回', weatherLabel: '晴', temp: '14-20°C', events: [
+                    { dateNum: '05', week: 'SUN', city: '高松 ➜ 羽田', weatherLabel: '晴', temp: '14-20°C', events: [
                         { time: '09:00', type: 'Food', title: 'Breakfast: 瀨戶晴れ', must: '烏龍麵' },
                         { time: '11:00', type: 'Spot', title: '栗林公園', guide: '三星名園。' },
-                        { time: '13:30', type: 'Spot', title: '讃岐おもちゃ美術館', guide: '藝術與玩具。' },
-                        { time: '17:30', type: 'Car', title: 'TAK Airport 還車', desc: '滿油。' },
+                        { time: '13:30', type: 'Spot', title: '讃岐おもちゃ美術館', guide: '設計玩具。' },
+                        { time: '15:30', type: 'Spot', title: 'Ironmonger 古道具', guide: '12n open。' },
+                        { time: '17:30', type: 'Car', title: '高松空港還車', desc: '滿油。' },
                         { time: '19:40', type: 'Flight', title: 'NH540 (TAK➜HND)' }
                     ]},
                     { dateNum: '06', week: 'MON', city: '東京快閃', weatherLabel: '晴', temp: '12-19°C', events: [
-                        { time: '10:00', type: 'Spot', title: '淺草/扭蛋百貨', guide: '最後東京採買。' },
+                        { time: '10:00', type: 'Spot', title: '淺草/扭蛋百貨', guide: '淺草花屋敷店。' },
                         { time: '13:00', type: 'Spot', title: '杢目金屋', booked: true, guide: '<b>1pm 預約</b>。' },
-                        { time: '16:00', type: 'Spot', title: 'NEWoMan 高輪', guide: '精品血拼。' },
-                        { time: '22:00', type: 'Transport', title: '➜ Airport', desc: '前往機場。' }
+                        { time: '16:00', type: 'Spot', title: 'NEWoMan 高輪', guide: '最後採購。' },
+                        { time: '22:00', type: 'Transport', title: '➜ Airport', desc: '前往羽田機場。' }
                     ]},
-                    { dateNum: '07', week: 'TUE', city: '返港', weatherLabel: '-', temp: '-', events: [
+                    { dateNum: '07', week: 'TUE', city: '返回', weatherLabel: '-', temp: '-', events: [
                         { time: '01:35', type: 'Flight', title: 'NH813 (HND➜HKG)' }
                     ]}
                 ]
