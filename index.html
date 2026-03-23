@@ -14,20 +14,24 @@
             --bg-cream: #F9F7F2; 
             --accent-red: #8E2D4F; 
             --text-main: #2D2424;
-            font-size: 17px; /* 精確設定為 17px */
+            font-size: 17px; 
         }
         body { background-color: var(--bg-cream); color: var(--text-main); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; overflow-x: hidden; }
         .serif { font-family: 'Noto Serif JP', serif; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* 行程動態線 */
+        /* 行程動態線條 */
         .timeline-line { position: absolute; left: 55px; top: 0; bottom: 0; width: 1.5px; background: #E5E1D8; z-index: 0; }
         .event-card { position: relative; z-index: 10; padding-left: 75px; margin-bottom: 75px; transition: all 0.4s cubic-bezier(0.1, 0.9, 0.2, 1); opacity: 0.15; transform: scale(0.96); }
         .event-card.is-active { opacity: 1; transform: scale(1); }
         .event-time { position: absolute; left: 0; width: 50px; text-align: right; font-size: 1.1rem; font-weight: 900; color: #ccc; transition: 0.3s; }
         .is-active .event-time { color: var(--accent-red); font-size: 1.3rem; }
 
-        /* 懸浮狀態列 */
+        /* 底部導覽：Icon 縮小 */
+        .tab-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 0.5px solid #eee; display: flex; justify-content: space-around; padding: 14px 0 calc(18px + env(safe-area-inset-bottom)); z-index: 1001; }
+        .tab-nav i { font-size: 1.25rem; }
+
+        /* 懸浮狀態欄 */
         .floating-status { 
             position: fixed; bottom: calc(90px + env(safe-area-inset-bottom)); left: 16px; right: 16px; 
             background: rgba(255,255,255,0.98); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
@@ -35,18 +39,20 @@
             display: flex; align-items: center; padding: 16px 22px; z-index: 999; border: 0.5px solid rgba(0,0,0,0.05);
         }
 
-        /* 底部導覽：調整圖標大小 */
-        .tab-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 0.5px solid #eee; display: flex; justify-content: space-around; padding: 14px 0 calc(18px + env(safe-area-inset-bottom)); z-index: 1001; }
-        
-        /* 彈窗細節 */
+        /* 彈窗內容：導遊加強 */
         .modal-container { 
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 2000;
             background: white; border-top-left-radius: 40px; border-top-right-radius: 40px;
             max-height: 94vh; overflow: hidden; display: flex; flex-direction: column;
             will-change: transform; transition: transform 0.4s cubic-bezier(0.15, 0.85, 0.35, 1);
         }
-        .guide-text { font-size: 0.95rem; line-height: 1.8; color: #555; }
-        .guide-text b { color: var(--accent-red); font-weight: 800; }
+        .modal-scroll-area { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+        .guide-content { font-size: 1rem; line-height: 1.8; color: #444; }
+        .guide-content b { color: var(--accent-red); font-weight: 800; }
+        .guide-content hr { border: 0; border-top: 1px solid #f0f0f0; margin: 15px 0; }
+        
+        .expense-grid { display: grid; grid-template-columns: repeat(12, 1fr); align-items: center; width: 100%; gap: 8px; }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
         input { font-size: 1rem !important; }
     </style>
 </head>
@@ -119,9 +125,9 @@
 
     <!-- TAB 2: 記帳 -->
     <div x-show="activeTab === 'expenses'" class="min-h-screen pb-60 px-8 pt-16" x-cloak>
-        <h2 class="serif text-2xl font-black mb-6">旅費計算</h2>
+        <h2 class="serif text-2xl font-black mb-6">旅遊預算</h2>
         <div class="bg-[#2D2424] text-white rounded-[32px] p-8 mb-8 shadow-xl">
-            <p class="text-[10px] opacity-40 font-black uppercase tracking-[2px] mb-2">Total Expenditure</p>
+            <p class="text-[10px] opacity-40 font-black uppercase mb-2">Total Expenditure</p>
             <span class="text-3xl font-black serif tabular-nums">HK$ <span x-text="totalHKD"></span></span>
             <p class="text-[9px] opacity-30 font-bold uppercase mt-3 tracking-widest">1 JPY = <span x-text="rate"></span> HKD</p>
         </div>
@@ -158,7 +164,7 @@
 
     <!-- TAB 3: 航班 -->
     <div x-show="activeTab === 'flights'" class="p-10 pt-20 pb-48" x-cloak>
-        <h2 class="serif text-xl font-black mb-8 text-center uppercase tracking-widest">Flights</h2>
+        <h2 class="serif text-xl font-black mb-8 text-center uppercase tracking-widest">Flights Info</h2>
         <div class="space-y-4">
             <template x-for="f in flights" :key="f.no">
                 <div class="bg-white rounded-3xl p-6 border-l-4 border-[#8E2D4F] flex justify-between items-center shadow-xs">
@@ -186,25 +192,25 @@
                 <iframe width="100%" height="100%" frameborder="0" :src="'https://maps.google.com/maps?q=' + encodeURIComponent(activeEvent?.title ?? '') + '&t=&z=15&ie=UTF8&iwloc=&output=embed'"></iframe>
             </div>
             <div class="bg-[#FDFBFA] rounded-[30px] p-7 mb-8 border border-[#F0E6E1]">
-                <div class="flex items-center text-[#8E2D4F] font-black text-[10px] mb-4 uppercase tracking-[4px]"><i class="fas fa-star mr-2"></i> 導遊攻略</div>
-                <div class="guide-text" x-html="activeEvent?.guide ?? activeEvent?.desc ?? ''"></div>
+                <div class="flex items-center text-[#8E2D4F] font-black text-[10px] mb-4 uppercase tracking-[4px]"><i class="fas fa-star mr-2"></i> 導遊深度攻略</div>
+                <div class="guide-content" x-html="activeEvent?.guide ?? activeEvent?.desc ?? ''"></div>
             </div>
             <a :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(activeEvent?.title ?? '')" class="block w-full bg-[#2D2424] text-white text-center py-5 rounded-2xl font-black text-xs active:scale-95 transition-transform mb-12 uppercase tracking-widest">Google Maps 導覽</a>
         </div>
     </div>
 
-    <!-- 底部導覽：調整圖標大小 -->
+    <!-- 底部導覽 -->
     <nav class="tab-nav">
-        <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-[#8E2D4F]' : 'text-gray-300'"><i class="fas fa-calendar-day text-xl"></i></button>
-        <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-[#8E2D4F]' : 'text-gray-300'"><i class="fas fa-wallet text-xl"></i></button>
-        <button @click="activeTab = 'flights'" :class="activeTab === 'flights' ? 'text-[#8E2D4F]' : 'text-gray-300'"><i class="fas fa-plane-departure text-xl"></i></button>
+        <button @click="activeTab = 'itinerary'" :class="activeTab === 'itinerary' ? 'text-[#8E2D4F]' : 'text-gray-300'"><i class="fas fa-calendar-day"></i></button>
+        <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-[#8E2D4F]' : 'text-gray-300'"><i class="fas fa-wallet"></i></button>
+        <button @click="activeTab = 'flights'" :class="activeTab === 'flights' ? 'text-[#8E2D4F]' : 'text-gray-300'"><i class="fas fa-plane-departure"></i></button>
     </nav>
 
     <script>
         function travelApp() {
             return {
                 currentDay: 1, activeTab: 'itinerary', activeEventIndex: 0, modalOpen: false, activeEvent: {},
-                expenses: JSON.parse(localStorage.getItem('trip_exp_v35') || '[]'),
+                expenses: JSON.parse(localStorage.getItem('trip_exp_v37') || '[]'),
                 newExpName: '', newExpAmount: '', rate: 0.0515,
                 touchStartX: 0, startY: 0, translateY: 0, isDragging: false, modalScrollTop: 0,
 
@@ -271,9 +277,9 @@
                     if(!this.newExpName || !this.newExpAmount) return;
                     this.expenses.unshift({ name: this.newExpName, jpy: parseFloat(this.newExpAmount) });
                     this.newExpName = ''; this.newExpAmount = '';
-                    localStorage.setItem('trip_exp_v35', JSON.stringify(this.expenses));
+                    localStorage.setItem('trip_exp_v37', JSON.stringify(this.expenses));
                 },
-                deleteExpense(i) { this.expenses.splice(i, 1); localStorage.setItem('trip_exp_v35', JSON.stringify(this.expenses)); },
+                deleteExpense(i) { this.expenses.splice(i, 1); localStorage.setItem('trip_exp_v37', JSON.stringify(this.expenses)); },
                 get totalHKD() { return this.expenses.reduce((sum, item) => sum + (item.jpy * this.rate), 0).toFixed(1); },
 
                 flights: [
@@ -284,71 +290,73 @@
                 ],
 
                 itinerary: [
-                    { dateNum: '28', week: 'SAT', city: '香港 ➜ 羽田', weatherLabel: '多雲', temp: '12-18°C', events: [{ time: '23:55', type: 'Flight', title: '全日空 NH1914', desc: '啟程飛往羽田。', guide: '從香港機場出發，請注意登機時間。', must: '' }]},
+                    { dateNum: '28', week: 'SAT', city: '香港 ➜ 羽田', weatherLabel: '多雲', temp: '12-18°C', events: [{ time: '23:55', type: 'Flight', title: '全日空 NH1914', desc: '啟程飛往東京。', guide: '從香港國際機場出發，請確保登機手續已完成。這是紅眼航班，建議在機上多休息。', must: '' }]},
                     { dateNum: '29', week: 'SUN', city: '高松 ➜ 仁淀川', weatherLabel: '晴', temp: '15-22°C', events: [
-                        { time: '08:00', type: 'Car', title: 'Toyota rent a car (TAK)', guide: '<b>預約番號 98172536000</b>。取車後建議先檢查 ETC 卡。', must: '' },
-                        { time: '12:00', type: 'Food', title: '西村商店 (佐川店)', must: '炙燒鰹魚', guide: '當地評價極高的海鮮食堂。' },
-                        { time: '13:20', type: 'Spot', title: '仁淀川 Crystal Kayak', guide: '<b>1:20pm 預約</b>。水晶獨木舟，體驗「仁淀藍」。', must: '水晶獨木舟' },
-                        { time: '15:30', type: 'Spot', title: '上久喜、久喜、引地橋花桃', must: '絕美花桃', guide: '三大花桃絕景巡禮。' },
-                        { time: '16:30', type: 'Spot', title: 'ひょうたん桜公園', guide: '百年巨櫻，高知賞櫻秘境。', must: '' },
-                        { time: '19:00', type: 'Hotel', title: '星ふるヴィレッジ TENGU', guide: 'CI 5pm。天狗高原觀星旅館。', must: '' }
+                        { time: '08:00', type: 'Car', title: 'Toyota rent a car (TAK)', guide: '<b>預約番號 98172536000</b>。高松機場取車時請務必租借 ETC 卡。四國高速收費站多為無人，ETC 可節省大量排隊時間。取車後約需 2.5-3 小時車程前往仁淀川。', must: '' },
+                        { time: '12:00', type: 'Food', title: '西村商店 (佐川店)', must: '炙燒鰹魚定食', guide: '西村商店以每日新鮮直送的海味聞名。來到高知，絕對不能錯過<b>藁燒鰹魚 (Katsuo no Tataki)</b>，用稻草強火瞬間燃燒魚皮，帶有迷人的煙燻焦香。必點選單：鰹魚刺身定食。' },
+                        { time: '13:20', type: 'Spot', title: '仁淀川 Crystal Kayak', guide: '<b>1:20pm 預約</b>。仁淀川連年被評為日本水質第一。這裡的水被稱為「仁淀藍」。透明獨木舟能讓你感覺像漂浮在空氣中。<b>拍照重點</b>：划向水深較淺的碧藍區域，水下的鵝卵石清晰可見。', must: '水晶獨木舟' },
+                        { time: '15:30', type: 'Spot', title: '上久喜、久喜、引地橋花桃', must: '花桃大賞', guide: '春季的高知仁淀川町有著「花桃之里」的美譽。這裡遍布著約 1500 株紅白相間的花桃樹，整座山頭如仙境般。引地橋周邊的花桃與河景相映成趣。' },
+                        { time: '16:30', type: 'Spot', title: 'ひょうたん桜公園', guide: '這裡矗立著一株樹齡約 500 年的巨型櫻花樹，因其含苞待放時像葫蘆而得名「葫蘆櫻」。櫻花背景是層疊的山丘，非常壯闊。', must: '' },
+                        { time: '19:00', type: 'Hotel', title: '星ふるヴィレッジ TENGU', guide: 'CI 5pm。位於天狗高原四國喀斯特（Karst）的絕美頂端。晚餐後請務必到戶外，這裡海拔 1400 公尺，是日本著名的觀星聖地。飯店內設有全方位天象儀與大型望遠鏡。', must: '' }
                     ]},
                     { dateNum: '30', week: 'MON', city: '天狗高原 ➜ 檮原', weatherLabel: '晴', temp: '13-20°C', events: [
-                        { time: '08:00', type: 'Food', title: 'Breakfast at hotel', desc: '飯店享用早餐。', guide: '望向喀斯特地形的美味晨食。', must: '' },
-                        { time: '10:00', type: 'Spot', title: '天狗高原 & 白龍湖', guide: '壯闊喀斯特地形與碧綠白龍湖。', must: '' },
-                        { time: '11:00', type: 'Spot', title: '檮原町 (建築巡禮)', must: '雲之上圖書館', guide: '隈研吾建築群：雲之上圖書館、檮原座。' },
-                        { time: '12:30', type: 'Food', title: 'Lunch: かざぐるま / くさぶき', guide: '兩家任選。', must: '' },
-                        { time: '16:00', type: 'Spot', title: '岩本寺 Supermarket', guide: '<b>⚠️ 9:00pm 關門</b>。', must: '' },
-                        { time: '19:30', type: 'Hotel', title: '岩本寺 (宿坊)', guide: 'CI 3pm, CO 10am。天井畫極其美麗。', must: '' }
+                        { time: '08:00', type: 'Food', title: 'Breakfast at hotel', guide: '在被稱為「天空樂園」的高原享用晨間料理，開啟喀斯特地形之旅。', must: '' },
+                        { time: '10:00', type: 'Spot', title: '天狗高原 & 白龍湖', guide: '<b>天狗高原</b>：日本三大喀斯特之一。遍地散落著白色石灰岩，像羊群在草原。<b>白龍湖</b>：位於仁淀川源流處，湖面呈祖母綠色，倒映著森林，傳說有神靈居住。', must: '' },
+                        { time: '11:00', type: 'Spot', title: '檮原町 (隈研吾建築群)', must: '雲之上圖書館', guide: '這是一座被山環抱的建築小鎮。隈研吾深受當地「檮原座」傳統木造建築啟發，設計了：<br>1. <b>雲之上圖書館</b>：內部像倒掛森林般的木樑架構。<br>2. <b>檮原町役場</b>：運用當地雪松打造的極簡行政中心。必拍：役場外的倒影。' },
+                        { time: '12:30', type: 'Food', title: 'Lunch: かざぐるま / くさぶき', guide: '「くさぶき」是傳統茅葺屋建築改建的食堂，以手工蕎麥麵與野味定食聞名。', must: '' },
+                        { time: '16:00', type: 'Spot', title: '岩本寺 Supermarket', guide: '<b>⚠️ 9:00pm 關門</b>。岩本寺宿坊周邊夜晚非常安靜且無商店，請務必在此買好今晚的零食與飲料。', must: '' },
+                        { time: '19:30', type: 'Hotel', title: '岩本寺 (宿坊)', guide: '四國 88 靈場第 37 番札所。岩本寺最著名的就是其本堂天井有 575 幅 pop-art 風格的畫作。近年轉型為藝術寺院，提供精緻的法式精進料理早餐，是現代與古老融合的獨特體驗。', must: '' }
                     ]},
                     { dateNum: '31', week: 'TUE', city: '四萬十 ➜ 高知', weatherLabel: '晴', temp: '14-23°C', events: [
-                        { time: '08:30', type: 'Food', title: 'Breakfast: Sotoffice', desc: '設計感早點。', guide: '', must: '' },
-                        { time: '10:00', type: 'Spot', title: '四万十町散策', guide: '沈下橋巡禮。感受清流沈下橋魅力。', must: '' },
-                        { time: '12:30', type: 'Food', title: '自由軒 本店', must: '味噌拉麵', guide: '高知經典拉麵名店。' },
-                        { time: '15:30', type: 'Food', title: '茶農家的店 あすなろ', must: '起司蛋糕', guide: '<b>⚠️ L.O. 3:30pm</b>。俯瞰河景茶房。' },
-                        { time: '17:00', type: 'Spot', title: '物產館 (天空之郷)', guide: '當地特產採購好地方。', must: '' },
-                        { time: '19:30', type: 'Hotel', title: '瀧乃元 近藤家', guide: 'CI 4pm, CO 10am。精緻老屋改建旅館。', must: '' }
+                        { time: '08:30', type: 'Food', title: 'Breakfast: Sotoffice', desc: '在靜謐的鄉間享用早餐。', must: '' },
+                        { time: '10:00', type: 'Spot', title: '四万十町散策', guide: '來到被稱為日本最後清流的四萬十川。重點在於<b>沈下橋</b>，這種橋沒有欄杆，在大雨河水暴漲時會自動沈入水下。必看：佐田沈下橋，這是最長也最出名的一座。', must: '' },
+                        { time: '12:30', type: 'Food', title: '自由軒 本店', must: '味噌拉麵', guide: '高知家喻戶曉的拉麵老店。他們的味噌底非常濃郁卻不鹹膩，建議搭配半份炒飯，這是在地人的標配。', must: '半炒飯拉麵組' },
+                        { time: '15:30', type: 'Food', title: '茶農家的店 あすなろ', must: '澤渡茶起司蛋糕', guide: '<b>⚠️ L.O. 3:30pm</b>。位於仁淀川上游的山坡，由在地茶農經營。他們的「澤渡茶」帶有獨特的清香，甜點非常精緻。推薦：抹茶與起司蛋糕。' },
+                        { time: '17:00', type: 'Spot', title: '物產館 (天空之郷)', guide: '位於久萬高原，販售在地採摘的高原蔬菜與精緻的手作果醬。', must: '' },
+                        { time: '19:30', type: 'Hotel', title: '瀧乃元 近藤家', guide: 'CI 4pm, CO 10am。這是傳承多代的旅館，入住這裡能體驗正宗的高知待客之道。晚餐建議預約他們的鄉土懷石料理。', must: '' }
                     ]},
                     { dateNum: '01', week: 'WED', city: '松山 ➜ 道後', weatherLabel: '晴', temp: '14-21°C', events: [
-                        { time: '08:30', type: 'Food', title: 'Breakfast at hotel', desc: '飯店早餐。', guide: '', must: '' },
-                        { time: '10:30', type: 'Spot', title: '茶堂公園 (櫻花祭)', guide: '松山賞櫻祭典。', must: '櫻花祭' },
-                        { time: '11:30', type: 'Spot', title: 'ハタ達できたてお菓子館', must: '栗タルト', guide: '松山銘菓御栗塔。' },
-                        { time: '15:00', type: 'Spot', title: '圓滿寺', guide: '結緣彩色球小寺。', must: '' },
-                        { time: '16:30', type: 'Spot', title: '道後溫泉散策', guide: '神隱少女油屋場景氛圍。', must: '' },
-                        { time: '19:30', type: 'Hotel', title: '山の手別邸 葉隱', guide: 'CI 4pm, CO 11am。私密風呂享受。', must: '' }
+                        { time: '08:30', type: 'Food', title: 'Breakfast at hotel', guide: '', must: '' },
+                        { time: '10:30', type: 'Spot', title: '茶堂公園 (櫻花祭)', must: '櫻花祭', guide: '位於松山市周邊，每逢四月初櫻花盛開時會舉辦祭典，兩旁會有豐富的屋台 (小吃攤)，氛圍極佳。', must: '' },
+                        { time: '11:30', type: 'Spot', title: 'ハタダできたてお菓子館', must: '御栗タルト', guide: 'Hatada 的「御栗塔」是松山銘菓，裡面塞滿了完整的栗子泥與栗子塊，外層則是帶有柚子清香的鬆軟海綿蛋糕。現場可以看到生產過程。', must: '' },
+                        { time: '15:00', type: 'Spot', title: '圓滿寺', guide: '以祈求結緣與長壽聞名。必拍：掛滿了數百個五彩繽紛「結緣球 (Omusubi-dama)」的本堂，視覺衝擊力很強，是 Instagram 上的熱門點。', must: '' },
+                        { time: '16:30', type: 'Spot', title: '道後溫泉散策', guide: '全日本最古老的溫泉，也是《神隱少女》油屋的原型。散策必備：溫泉毛巾袋。除了本館，最近整修完成的「椿之湯」與「飛鳥乃湯泉」外觀也非常壯觀。必看：本館的振鷺閣。', must: '' },
+                        { time: '19:30', type: 'Hotel', title: '山の手別邸 葉隱', guide: 'CI 4pm, CO 11am。融合了西洋文藝復興與日本和室風格的高級別邸，每一間套房都有獨立風呂，非常私密。', must: '' }
                     ]},
                     { dateNum: '02', week: 'THU', city: '雲邊寺 ➜ 香川', weatherLabel: '多雲', temp: '12-20°C', events: [
-                        { time: '08:30', type: 'Food', title: 'Breakfast at hotel', desc: '飯店早餐。', guide: '', must: '' },
-                        { time: '12:00', type: 'Spot', title: '雲邊寺山頂公園', must: '天空鞦韆', guide: '瀨戶內展望，最強拍照點。' },
-                        { time: '16:30', type: 'Spot', title: '紫雲出山 (集合要點)', must: '4:30pm 集合', guide: '1. 請於集合時間（4:30pm）前到「大濱漁港」集合。<br>2. 出示電子票。<br>3. 以Drive-through方式報到領票。<br>4. 5pm 開車上山。<br>5. 山頂停留約 70 分鐘。<br>6. 6:30pm 前出發下山。' },
-                        { time: '21:30', type: 'Spot', title: 'Aeon (Senzentuji)', guide: '<b>⚠️ 9:00pm 關門</b>。', must: '' },
-                        { time: '22:00', type: 'Hotel', title: 'Guesthouse Ihatov', guide: 'CI 10pm。', must: '' }
+                        { time: '08:30', type: 'Food', title: 'Breakfast at hotel', must: '' },
+                        { time: '12:00', type: 'Spot', title: '雲邊寺山頂公園', must: '天空鞦韆', guide: '搭乘日本最高落差的纜車上山。山頂設有「天空鞦韆」，你可以朝著瀨戶內海與三豐平原盪出去，視覺震撼。拍片必備：廣角鏡頭拍攝盪向雲端的瞬間。', must: '' },
+                        { time: '16:30', type: 'Spot', title: '紫雲出山 (重要任務)', must: '4:30pm 集合', guide: '<b>⚠️ 此處為行程核心亮點</b>。紫雲出山是《國家地理》雜誌推薦的世界級美景，尤其在櫻花與瀨戶內海藍色背景重疊時。指令：<br>1. 4:30pm 前抵達「大濱漁港」集合。<br>2. 手機出示電子票。<br>3. Drive-through 報到領票與地圖。<br>4. 5pm 出發上山。<br>5. 停留 70 分鐘。<br>6. 6:30pm 前下山。' },
+                        { time: '21:30', type: 'Spot', title: 'Aeon (Senzentuji)', guide: '<b>⚠️ 9:00pm 關門</b>。下山後唯一的補給大站，買點宵夜回飯店吧。', must: '' },
+                        { time: '22:00', type: 'Hotel', title: 'Guesthouse Ihatov', guide: 'CI 10pm。具有溫馨家庭氛圍的民宿，是深度旅遊者的首選。', must: '' }
                     ]},
                     { dateNum: '03', week: 'FRI', city: '香川 ➜ 金刀比羅', weatherLabel: '晴', temp: '11-19°C', events: [
-                        { time: '09:00', type: 'Food', title: '手打ちうどん ひさ枝', must: '讚岐烏龍麵', guide: '道地香川晨間烏龍麵。' },
-                        { time: '11:00', type: 'Spot', title: '古道具倉庫 Ken', guide: '<b>11am 預約</b>。復古倉庫探秘。', must: '' },
-                        { time: '13:30', type: 'Spot', title: '金刀比羅宮', guide: '建議停：<b>Toramaruryokansanpaiyuryo Lot</b>。', must: '一生必參拜' },
-                        { time: '18:30', type: 'Hotel', title: '三豐鶴 TOJI', guide: 'CI 4pm。百年米店改裝。', must: '' }
+                        { time: '09:00', type: 'Food', title: '手打ちうどん ひさ枝', must: '讚岐烏龍麵', guide: '香川縣是「烏龍麵王國」。這家店早上就營業，口感彈牙帶勁。建議加一顆炸半熟蛋與天婦羅碎屑。', must: '溫泉蛋烏龍麵' },
+                        { time: '11:00', type: 'Spot', title: '古道具倉庫 Ken', guide: '<b>11am 預約</b>。這是一個隱藏在倉庫區的復古迷天堂。裡面塞滿了昭和時代的燈具、家具、漆器，甚至有許多江戶時期的瓷片。非常適合挖寶。', must: '' },
+                        { time: '13:30', type: 'Spot', title: '金刀比羅宮', guide: '供奉海上守護神，被日本稱為一生必參拜一次的地方。要登上本宮需要走 785 級階梯，到奧社共 1368 級。<b>重點</b>：本宮旁的「幸福黃色御守」是此處限定。累了推薦去旁邊的「神椿」咖啡廳休息，由資生堂經營。', must: '幸福黃色御守' },
+                        { time: '17:30', type: 'Food', title: 'ピカソ 三野店 (buy dinner)', guide: '在地超級市場。可以在此選購精緻的和牛、海鮮壽司與當地小菜，帶回飯店享用豪華晚餐。', must: '' },
+                        { time: '18:30', type: 'Hotel', title: '三豐鶴 TOJI', guide: 'CI 4pm。將古老的釀酒廠改裝而成的精緻旅宿，內部結構保留了歷史木架。', must: '' }
                     ]},
                     { dateNum: '04', week: 'SAT', city: '松山春祭', weatherLabel: '晴', temp: '15-22°C', events: [
-                        { time: '09:00', type: 'Food', title: '須崎食料品店', must: '烏龍麵', guide: '停車：<b>Friend Parking Lot</b>。' },
-                        { time: '11:00', type: 'Spot', title: '城山公園 睇屋台', guide: '春祭祭典熱鬧氛圍。', must: '' },
-                        { time: '15:00', type: 'Spot', title: '迪士尼特別巡遊', must: '年度重頭戲', guide: '位於大街道區。' },
-                        { time: '17:30', type: 'Spot', title: '大名武者行列', guide: '傳統武士裝束巡遊。', must: '' },
-                        { time: '22:00', type: 'Hotel', title: 'New Grande Mimatsu', guide: 'CI 10pm。', must: '' }
+                        { time: '09:00', type: 'Food', title: '須崎食料品店', must: '生卵烏龍麵', guide: '停：<b>Friend Parking Lot</b>。這是烏龍麵界的米其林。沒有裝修，直接在車房吃。必點：熱麵加雞蛋與醬油，簡單卻極度美味。每日限量供應，賣完即止。', must: '' },
+                        { time: '11:00', type: 'Spot', title: '城山公園 睇屋台', guide: '松山春祭 (Oshiro Matsuri) 的主會場。城下町會擺滿各式攤位，從烤魷魚、大草莓巧克力到炒麵，充滿濃厚的江戶祭典氛圍。', must: '' },
+                        { time: '15:00', type: 'Spot', title: '迪士尼特別巡遊', must: '大街道區', guide: '這是 2026 年松山春祭的重頭戲。米奇與朋友們將在銀座街頭進行大規模巡演。這一天松山市區會封閉交通，大街道區會萬人空巷，建議至少提前 1.5 小時卡位。', must: '' },
+                        { time: '17:30', type: 'Spot', title: '大名武者行列', guide: '穿著華麗盔甲與傳統服飾的「武者行列」巡遊。從ロープウェー商店街出發，經大街道、千舟町。視覺效果震撼，讓你一秒回到戰國時代。', must: '' },
+                        { time: '22:00', type: 'Hotel', title: 'New Grande Mimatsu', guide: 'CI 10pm。位於高松溫泉區的老牌高檔飯店。', must: '' }
                     ]},
-                    { dateNum: '05', week: 'SUN', city: '高松 ➜ 羽田', weatherLabel: '晴', temp: '14-20°C', events: [
-                        { time: '09:00', type: 'Food', title: '瀨戶晴れ', must: '烏龍麵', guide: '超高評價烏龍麵名店。' },
-                        { time: '11:00', type: 'Spot', title: '栗林公園', guide: '三星庭園絕美景致。', must: '天下名園' },
-                        { time: '15:30', type: 'Spot', title: 'Ironmonger 古道具', guide: '12n open。復古老物搜集。', must: '' },
-                        { time: '17:30', type: 'Car', title: 'TAK Airport 還車', guide: '機場滿油還車。', must: '' },
+                    { dateNum: '05', week: 'SUN', city: '高松 ➜ 返回', weatherLabel: '晴', temp: '14-20°C', events: [
+                        { time: '09:00', type: 'Food', title: '瀨戶晴れ', must: '最強烏龍麵', guide: '這家被許多美食家評為香川烏龍麵的第一名。它的麵體有一種獨特的「滑潤感」，咬下去的回彈力非常驚人。推薦點「肉烏龍」或「冷烏龍」。', must: '' },
+                        { time: '11:00', type: 'Spot', title: '栗林公園', guide: '米其林三星評鑑的「特別名勝」。這裡的湖泊與翠林交織，每走一步景色都不同，被譽為「一步一景」。推薦在「掬月亭」喝抹茶眺望南湖。春季夜晚更有點燈活動。', must: '名園賞櫻' },
+                        { time: '13:30', type: 'Spot', title: '讃岐おもちゃ美術館 & Shoe963', must: '必逛！', guide: '【特色補回】這裡不只是美術館，其附屬的商店網羅了全四國的設計選物、精緻木作玩具與工藝品。Shoe963 則是一家結合了咖啡與手工選品的複合式店鋪。', must: '' },
+                        { time: '15:30', type: 'Spot', title: 'Ironmonger 古道具', guide: '12n open。這是一家很有個性的鐵器與古道具店。店內充滿鏽蝕美學，你能找到獨特的餐具、手工鐵架與極具粗獷美感的裝飾品。', must: '' },
+                        { time: '17:30', type: 'Car', title: 'TAK Airport 還車', guide: '請在此前回高松機場，並確保油箱已滿。還完車後搭乘免費接駁車去機場大廳。', must: '' },
                         { time: '19:40', type: 'Flight', title: 'NH540 (高松➜羽田)' },
-                        { time: '21:30', type: 'Hotel', title: '京急ＥＸホテル高輪', must: 'Rakuten 預約', guide: '<b>CO 10am</b>。鄰近品川站。' }
+                        { time: '21:30', type: 'Hotel', title: '京急ＥＸホテル高輪', must: 'Rakuten 預約', guide: '<b>CO 10am</b>。飯店位於品川站旁。這區非常熱鬧，如果還有體力，飯店周邊有很多 24 小時營業的居酒屋與拉麵店。', must: '' }
                     ]},
-                    { dateNum: '06', week: 'MON', city: '東京特選', weatherLabel: '晴', temp: '12-19°C', events: [
-                        { time: '11:00', type: 'Spot', title: '杢目金屋 (銀座本店)', must: '傳統工藝', guide: '<b>預約行程</b>。傳承百年金工藝術。', must: '' },
-                        { time: '12:00', type: 'Spot', title: '#C-pla premium 銀座', must: '扭蛋聖地', guide: '銀座最豪華扭蛋店。' },
-                        { time: '15:00', type: 'Spot', title: '高輪GATEWAY CITY', guide: '隈研吾設計全新車站城。', must: '' }
+                    { dateNum: '06', week: 'MON', city: '銀座 ➜ 高輪', weatherLabel: '晴', temp: '12-19°C', events: [
+                        { time: '11:00', type: 'Spot', title: '杢目金屋 (銀座本店)', must: '傳統工藝', guide: '<b>預約行程</b>。木目金 (Mokume Gane) 是一種源自江戶時代、原用於裝飾日本刀的技術。將不同顏色的金屬疊合、雕刻後鍛打出像木紋般的圖案。這裡是全日本最權威的訂製店。', must: '' },
+                        { time: '12:00', type: 'Spot', title: '#C-pla premium 銀座', must: '扭蛋大賞', guide: '位於「マロニエゲート銀座1」一樓的旗艦級扭蛋專賣店。這裡標榜「Premium」，有許多限量版與高品質的擬真扭蛋，甚至有銀座限定款式。', must: '' },
+                        { time: '15:00', type: 'Spot', title: '高輪GATEWAY CITY', must: '隈研吾建築', guide: '由隈研吾設計的 JR 全新車站城市。這棟建築結合了日式摺紙風格的天棚與大量的開放綠化空間，是目前東京最具指標性的現代建築景點之一。', must: '' }
                     ]},
                     { dateNum: '07', week: 'TUE', city: '抵港', weatherLabel: '-', temp: '-', events: [
                         { time: '01:35', type: 'Flight', title: 'NH813 (羽田➜香港)' }
